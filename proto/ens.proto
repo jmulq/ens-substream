@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package eth.ens.v1;
+
+message Domains {
+  repeated Domain domains = 1;
+}
+
+message Domain {
+    string name = 1;
+    string label_name = 2;
+    string label_hash = 3;
+    Account owner = 4;
+}
+
+message Account {
+  string address = 1;
+}
+
+message Transfers {
+  repeated Transfer transfers = 1;
+}
+
+message Transfer {
+  Account from = 1;
+  Account to = 2;
+  string token_id = 3;
+  uint64 block_number = 4;
+  string tx_hash = 5;
+}

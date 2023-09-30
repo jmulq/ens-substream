@@ -1,96 +1,60 @@
 mod abi;
 mod pb;
-use hex_literal::hex;
-use pb::eth::erc721::v1 as erc721;
-use substreams::{key, prelude::*};
-use substreams::{log, store::StoreAddInt64, Hex};
-use substreams_database_change::pb::database::DatabaseChanges;
-use substreams_database_change::tables::Tables;
+mod constants;
+mod helpers;
+
+use pb::eth::ens::v1 as ens;
+use substreams::Hex;
 use substreams_ethereum::pb::sf::ethereum::r#type::v2 as eth;
 
-// Bored Ape Club Contract
-const TRACKED_CONTRACT: [u8; 20] = hex!("bc4ca0eda7647a8ab7c2061c2e118a18a936f13d");
-
-substreams_ethereum::init!();
-
-/// Extracts transfers events from the contract
 #[substreams::handlers::map]
-fn map_transfers(blk: eth::Block) -> Result<Option<erc721::Transfers>, substreams::errors::Error> {
-    let transfers: Vec<_> = blk
-        .events::<abi::erc721::events::Transfer>(&[&TRACKED_CONTRACT])
-        .map(|(transfer, log)| {
-            substreams::log::info!("NFT Transfer seen");
+fn map_domains(block: eth::Block) -> Result<Option<ens::Domains>, substreams::errors::Error> {
+    let domains: Vec<_> = block
+        .events::<abi::eth_registrar_controller::events::NameRegistered>(&[&constants::ETH_REG_CONTROLLER])
+        .map(|(event, _log)| {
+            substreams::log::info!("ENS Domain Registered");
+            let name = event.name.clone() + ".eth";
 
-            erc721::Transfer {
-                trx_hash: Hex::encode(&log.receipt.transaction.hash),
-                from: Hex::encode(&transfer.from),
-                to: Hex::encode(&transfer.to),
-                token_id: transfer.token_id.to_u64(),
-                ordinal: log.block_index() as u64,
+            ens::Domain {
+                name,
+                label_name: event.name,
+                label_hash: Hex(event.label.to_vec()).to_string(),
+                owner: Some(ens::Account {
+                    address: helpers::format_hex(&event.owner)
+                })
             }
         })
         .collect();
+
+    if domains.len() == 0 {
+        return Ok(None);
+    }
+    Ok(Some(ens::Domains { domains }))
+}
+
+// TODO: How can we update the domains entities via these events.
+#[substreams::handlers::map]
+fn map_transfers(block: eth::Block) -> Result<Option<ens::Transfers>, substreams::errors::Error> {
+    let transfers: Vec<_> = block
+        .events::<abi::base_registrar::events::Transfer>(&[&constants::BASE_REGISTRAR])
+        .map(|(event, log)| {
+            substreams::log::info!("ENS Domain Transfer");
+
+            ens::Transfer {
+                from: Some(ens::Account {
+                    address: helpers::format_hex(&event.from),
+                }),
+                to: Some(ens::Account {
+                    address: helpers::format_hex(&event.to)
+                }),
+                token_id: event.token_id.to_string(),
+                block_number: block.number,
+                tx_hash: helpers::format_hex(&log.receipt.transaction.hash)
+            }
+        }).collect();
+
     if transfers.len() == 0 {
         return Ok(None);
     }
-
-    Ok(Some(erc721::Transfers { transfers }))
-}
-
-const NULL_ADDRESS: &str = "0000000000000000000000000000000000000000";
-
-/// Store the total balance of NFT tokens for the specific TRACKED_CONTRACT by holder
-#[substreams::handlers::store]
-fn store_transfers(transfers: erc721::Transfers, s: StoreAddInt64) {
-    log::info!("NFT holders state builder");
-    for transfer in transfers.transfers {
-        if transfer.from != NULL_ADDRESS {
-            log::info!("Found a transfer out {}", Hex(&transfer.trx_hash));
-            s.add(transfer.ordinal, generate_key(&transfer.from), -1);
-        }
-
-        if transfer.to != NULL_ADDRESS {
-            log::info!("Found a transfer in {}", Hex(&transfer.trx_hash));
-            s.add(transfer.ordinal, generate_key(&transfer.to), 1);
-        }
-    }
-}
-
-#[substreams::handlers::map]
-fn db_out(
-    clock: substreams::pb::substreams::Clock,
-    transfers: erc721::Transfers,
-    owner_deltas: Deltas<DeltaInt64>,
-) -> Result<DatabaseChanges, substreams::errors::Error> {
-    let mut tables = Tables::new();
-    for transfer in transfers.transfers {
-        tables
-            .create_row(
-                "transfer",
-                format!("{}-{}", &transfer.trx_hash, transfer.ordinal),
-            )
-            .set("trx_hash", transfer.trx_hash)
-            .set("from", transfer.from)
-            .set("to", transfer.to)
-            .set("token_id", transfer.token_id)
-            .set("ordinal", transfer.ordinal);
-    }
-
-    for delta in owner_deltas.into_iter() {
-        let holder = key::segment_at(&delta.key, 1);
-        let contract = key::segment_at(&delta.key, 2);
-
-        tables
-            .create_row("owner_count", format!("{}-{}", contract, holder))
-            .set("contract", contract)
-            .set("holder", holder)
-            .set("balance", delta.new_value)
-            .set("block_number", clock.number);
-    }
-
-    Ok(tables.to_database_changes())
-}
-
-fn generate_key(holder: &String) -> String {
-    return format!("total:{}:{}", holder, Hex(TRACKED_CONTRACT));
+    Ok(Some(ens::Transfers { transfers }))
 }

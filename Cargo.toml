@@ -22,6 +22,7 @@ substreams = "0.5"
 substreams-database-change = "1.2"
 # Use latest from https://crates.io/crates/substreams-ethereum
 substreams-ethereum = "0.9"
+tiny-keccak = "2.0.2"
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
 [target.wasm32-unknown-unknown.dependencies]

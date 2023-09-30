@@ -1,1 +1,2 @@
-pub mod erc721;
+pub mod base_registrar;
+pub mod eth_registrar_controller;
