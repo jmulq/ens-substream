@@ -27,4 +27,5 @@ message Transfer {
   string token_id = 3;
   uint64 block_number = 4;
   string tx_hash = 5;
+  uint32 log_index = 6;
 }

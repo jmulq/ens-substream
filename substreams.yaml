@@ -4,7 +4,8 @@ package:
   version: v0.1.0
 
 imports:
-  database_change: https://github.com/streamingfast/substreams-sink-database-changes/releases/download/v1.2.1/substreams-database-change-v1.2.1.spkg
+  entities_change: https://github.com/streamingfast/substreams-sink-entity-changes/releases/download/v1.3.0/substreams-sink-entity-changes-v1.3.0.spkg
+
 
 protobuf:
   files:
@@ -18,18 +19,27 @@ binaries:
     file: ./target/wasm32-unknown-unknown/release/substreams.wasm
 
 modules:
-  - name: map_domains
+  - name: map_domain
     kind: map
-    initialBlock: 16925618
+    initialBlock: 9380410
     inputs: 
       - source: sf.ethereum.type.v2.Block
     output:
       type: proto:eth.ens.v1.Domains
   
-  - name: map_transfers
+  - name: map_transfer
     kind: map
     initialBlock: 9380410
     inputs: 
       - source: sf.ethereum.type.v2.Block
     output:
       type: proto:eth.ens.v1.Transfers
+
+  - name: graph_out
+    kind: map
+    initialBlock: 9380410
+    inputs:
+      - map: map_domain
+      - map: map_transfer
+    output:
+      type: proto:sf.substreams.sink.entity.v1.EntityChanges

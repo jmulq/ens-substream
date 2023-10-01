@@ -42,5 +42,7 @@ pub struct Transfer {
     pub block_number: u64,
     #[prost(string, tag="5")]
     pub tx_hash: ::prost::alloc::string::String,
+    #[prost(uint32, tag="6")]
+    pub log_index: u32,
 }
 // @@protoc_insertion_point(module)
