@@ -36,8 +36,8 @@ pub struct NameTransfer {
     pub to: ::core::option::Option<Account>,
     #[prost(string, tag="3")]
     pub token_id: ::prost::alloc::string::String,
-    #[prost(string, tag="5")]
-    pub tx_hash: ::prost::alloc::string::String,
+    #[prost(bytes="vec", tag="5")]
+    pub tx_hash: ::prost::alloc::vec::Vec<u8>,
     #[prost(uint64, tag="4")]
     pub block_number: u64,
     #[prost(uint32, tag="6")]

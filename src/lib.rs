@@ -48,7 +48,7 @@ fn map_transfer(
             }),
             token_id: event.token_id.to_string(),
             block_number: block.number,
-            tx_hash: helpers::format_hex(&log.receipt.transaction.hash),
+            tx_hash: log.receipt.transaction.hash.clone(),
             log_index: log.block_index(),
         })
         .collect();
@@ -79,7 +79,7 @@ pub fn graph_out(
         if let Some(to) = &transfer.to {
             tables
                 .create_row(
-                    "Transfer",
+                    "NameTransferred",
                     create_event_id(&transfer.block_number, &transfer.log_index),
                 )
                 .set("tokenID", transfer.token_id)

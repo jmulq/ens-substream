@@ -13,7 +13,7 @@ type NameTransferred @entity {
   "The unique identifier of the event"
   id: ID!
   "The token ID related to the transfer"
-  tokenId: String!
+  tokenID: String!
   "The block number at which the event occurred"
   blockNumber: BigInt!
   "The transaction hash of the transaction that triggered the event"
