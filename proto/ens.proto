@@ -10,22 +10,21 @@ message Domain {
     string name = 1;
     string label_name = 2;
     string label_hash = 3;
-    Account owner = 4;
 }
 
 message Account {
   string address = 1;
 }
 
-message Transfers {
-  repeated Transfer transfers = 1;
+message NameTransfers {
+  repeated NameTransfer name_transfers = 1;
 }
 
-message Transfer {
+message NameTransfer {
   Account from = 1;
   Account to = 2;
   string token_id = 3;
-  uint64 block_number = 4;
   string tx_hash = 5;
+  uint64 block_number = 4;
   uint32 log_index = 6;
 }

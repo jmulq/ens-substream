@@ -1,4 +1,3 @@
-# TODO Update this according to ENS subgraph
 type Domain @entity {
   "The namehash of the name"
   id: ID!
@@ -8,48 +7,17 @@ type Domain @entity {
   labelName: String
   "keccak256(labelName)"
   labelhash: Bytes
-#   "The namehash (id) of the parent name"
-#   parent: Domain
-#   "Can count domains from length of array"
-#   subdomains: [Domain!]! @derivedFrom(field: "parent")
-#   "The number of subdomains"
-#   subdomainCount: Int!
-#   "Address logged from current resolver, if any"
-#   resolvedAddress: Account
-
-#   "The resolver that controls the domain's settings"
-#   resolver: Resolver
-#   "The time-to-live (TTL) value of the domain's records"
-#   ttl: BigInt
-
-#   "Indicates whether the domain has been migrated to a new registrar"
-#   isMigrated: Boolean!
-#   "The time when the domain was created"
-#   createdAt: BigInt!
-
-  "The account that owns the domain"
-  owner: Account!
-#   "The account that owns the ERC721 NFT for the domain"
-#   registrant: Account
-#   "The account that owns the wrapped domain"
-#   wrappedOwner: Account
-
-#   "The expiry date for the domain, from either the registration, or the wrapped domain if PCC is burned"
-#   expiryDate: BigInt
 }
 
-interface DomainEvent {
+type NameTransferred @entity {
   "The unique identifier of the event"
   id: ID!
-  # "The domain name associated with the event"
-  # domain: Domain!
+  "The token ID related to the transfer"
+  tokenId: String!
   "The block number at which the event occurred"
-  blockNumber: Int!
+  blockNumber: BigInt!
   "The transaction hash of the transaction that triggered the event"
   transactionID: Bytes!
-}
-
-type Transfer implements DomainEvent @entity {
   "The account that owns the domain after the transfer"
-  owner: Account!
+  owner: String!
 }

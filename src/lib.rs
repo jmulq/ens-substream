@@ -21,9 +21,6 @@ fn map_domain(block: eth::Block) -> Result<Option<ens::Domains>, substreams::err
                 name,
                 label_name: event.name,
                 label_hash: Hex(event.label.to_vec()).to_string(),
-                owner: Some(ens::Account {
-                    address: helpers::format_hex(&event.owner)
-                })
             }
         })
         .collect();
@@ -35,13 +32,13 @@ fn map_domain(block: eth::Block) -> Result<Option<ens::Domains>, substreams::err
 }
 
 #[substreams::handlers::map]
-fn map_transfer(block: eth::Block) -> Result<Option<ens::Transfers>, substreams::errors::Error> {
-    let transfers: Vec<_> = block
+fn map_transfer(block: eth::Block) -> Result<Option<ens::NameTransfers>, substreams::errors::Error> {
+    let name_transfers: Vec<_> = block
         .events::<abi::base_registrar::events::Transfer>(&[&constants::BASE_REGISTRAR])
         .map(|(event, log)| {
             substreams::log::info!("ENS Domain Transfer");
 
-            ens::Transfer {
+            ens::NameTransfer {
                 from: Some(ens::Account {
                     address: helpers::format_hex(&event.from),
                 }),
@@ -51,35 +48,35 @@ fn map_transfer(block: eth::Block) -> Result<Option<ens::Transfers>, substreams:
                 token_id: event.token_id.to_string(),
                 block_number: block.number,
                 tx_hash: helpers::format_hex(&log.receipt.transaction.hash),
-                log_index: log.index()
+                log_index: log.block_index()
             }
         }).collect();
 
-    if transfers.len() == 0 {
+    if name_transfers.len() == 0 {
         return Ok(None);
     }
-    Ok(Some(ens::Transfers { transfers }))
+    Ok(Some(ens::NameTransfers { name_transfers }))
 }
 
 #[substreams::handlers::map]
-pub fn graph_out(domains: ens::Domains, transfers: ens::Transfers) -> Result<EntityChanges, substreams::errors::Error> {
+pub fn graph_out(domains: ens::Domains, name_transfers: ens::NameTransfers) -> Result<EntityChanges, substreams::errors::Error> {
     let mut tables = Tables::new();
 
-    for domain in domains.domains {
+    for domain in domains.domains.into_iter() {
         tables
             .create_row("Domain", name_hash(&domain.name).to_string())
             .set("name", domain.name)
             .set("labelName", domain.label_name)
-            .set("labelHash", domain.label_hash)
-            .set("owner", domain.owner.unwrap().address);
+            .set("labelHash", domain.label_hash);
     }
 
-    for transfer in transfers.transfers {
+    for transfer in name_transfers.name_transfers.into_iter() {        
         tables
             .create_row("Transfer", create_event_id(&transfer.block_number, &transfer.log_index))
+            .set("tokenID", transfer.token_id)
             .set("blockNumber", transfer.block_number)
-            .set("transcationId", transfer.tx_hash)
-            .set("owner", transfer.to.unwrap().address);
+            .set("transactionID", transfer.tx_hash)
+            .set("owner", &transfer.to.as_ref().unwrap().address);
     }
 
     Ok(tables.to_entity_changes())

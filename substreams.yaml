@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: "substreams_template"
+  name: "ens_substream"
   version: v0.1.0
 
 imports:
@@ -33,7 +33,7 @@ modules:
     inputs: 
       - source: sf.ethereum.type.v2.Block
     output:
-      type: proto:eth.ens.v1.Transfers
+      type: proto:eth.ens.v1.NameTransfers
 
   - name: graph_out
     kind: map
