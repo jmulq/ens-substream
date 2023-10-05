@@ -4,9 +4,8 @@ mod helpers;
 mod pb;
 
 use abi::{base_registrar, eth_registrar_controller};
-use helpers::{create_event_id, name_hash};
+use helpers::{create_event_id, format_hex, namehash};
 use pb::eth::ens::v1 as ens;
-use substreams::Hex;
 use substreams_entity_change::{pb::entity::EntityChanges, tables::Tables};
 use substreams_ethereum::pb::sf::ethereum::r#type::v2 as eth;
 
@@ -21,7 +20,7 @@ fn map_domain(block: eth::Block) -> Result<Option<ens::Domains>, substreams::err
             ens::Domain {
                 name,
                 label_name: event.name,
-                label_hash: Hex(event.label.to_vec()).to_string(),
+                label_hash: event.label.to_vec(),
             }
         })
         .collect();
@@ -69,10 +68,13 @@ pub fn graph_out(
 
     for domain in domains.domains.into_iter() {
         tables
-            .create_row("Domain", name_hash(&domain.name).to_string())
+            .create_row(
+                "Domain",
+                format_hex(&namehash(&domain.name).to_fixed_bytes()),
+            )
             .set("name", domain.name)
             .set("labelName", domain.label_name)
-            .set("labelHash", domain.label_hash);
+            .set("labelhash", domain.label_hash);
     }
 
     for transfer in name_transfers.name_transfers.into_iter() {

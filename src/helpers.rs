@@ -6,7 +6,7 @@ pub fn format_hex(address: &[u8]) -> String {
     format!("0x{}", Hex(address).to_string())
 }
 
-pub fn keccak_256<S>(bytes: S) -> [u8; 32]
+pub fn keccak256<S>(bytes: S) -> [u8; 32]
 where
     S: AsRef<[u8]>,
 {
@@ -17,14 +17,18 @@ where
     output
 }
 
-pub fn name_hash(name: &str) -> H256 {
+pub fn namehash(name: &str) -> H256 {
     if name.is_empty() {
         return H256::zero();
     }
 
+    // Remove the variation selector U+FE0F
+    let name = name.replace('\u{fe0f}', "");
+
+    // Generate the node starting from the right
     name.rsplit('.')
         .fold([0u8; 32], |node, label| {
-            keccak_256(&[node, keccak_256(label.as_bytes())].concat())
+            keccak256([node, keccak256(label.as_bytes())].concat())
         })
         .into()
 }

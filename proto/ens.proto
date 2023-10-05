@@ -9,7 +9,7 @@ message Domains {
 message Domain {
     string name = 1;
     string label_name = 2;
-    string label_hash = 3;
+    bytes label_hash = 3;
 }
 
 message Account {

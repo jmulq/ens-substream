@@ -46,7 +46,7 @@ type Domain @entity {
   id: ID!
   name: String
   labelName: String
-  labelHash: Bytes
+  labelhash: Bytes
 }
 
 type NameTransferred @entity {
